@@ -1,25 +1,85 @@
-import logo from './logo.svg';
-import './App.css';
+import React from "react"
+import Die from "./components/Die.js"
+import {nanoid} from "nanoid"
+import Confetti from "react-confetti"
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+export default function App() {
+
+    const [dice, setDice] = React.useState(allNewDice())
+    const [tenzies, setTenzies] = React.useState(false)
+
+    function allNewDice() {
+        const diceArr = []
+        for (let i = 0; i < 10; i++) {
+            let randNum = Math.ceil(Math.random() * 6);
+            let die = {
+                value: randNum,
+                isHeld: false,
+                id: nanoid()
+            }
+            diceArr.push(die);
+        }
+        console.log(diceArr);
+        return diceArr;
+    }
+
+    function rollDice() {
+        if (tenzies) {
+            setDice(allNewDice())
+            setTenzies(false)
+            return;
+        }
+        setDice(prevDice => prevDice.map(die => {
+            return die.isHeld ? die : {
+                value: Math.ceil(Math.random() * 6),
+                isHeld: false,
+                id: nanoid()
+            }
+        }));
+    }
+
+    function holdDice(id) {
+        setDice(prevDice => 
+            prevDice.map(die => {
+                return {...die,
+                isHeld: die.id===id ? !die.isHeld : die.isHeld}
+            }
+            )
+        )
+    }
+
+    React.useEffect(() => {
+        let win = true;
+        let numToWin = dice[0].value;
+        dice.forEach(die => {
+            if (!die.isHeld) {
+                win = false;
+            }
+            if (die.value !== numToWin) {
+                win = false
+            }
+        })
+        if (win) {
+            setTenzies(true)
+        }
+    }, [dice])
+
+    return (
+        <main>
+            {tenzies && <Confetti />}
+            <h2 className="title">Tenzies</h2>
+            <p>Roll until all dice are the same. Click each die to freeze 
+                it at its current value between rolls.</p>
+            <div className="dice-container">
+                {dice.map(die => {
+                    return <Die key={die.id} 
+                    value={die.value} 
+                    isHeld={die.isHeld}
+                    holdDice={() => holdDice(die.id)}
+                    />
+                })}
+            </div>
+            <button onClick={rollDice}>{tenzies ? "New Game" : "Roll"}</button>
+        </main>
+    )
 }
-
-export default App;
